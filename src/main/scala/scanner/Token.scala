@@ -1,5 +1,5 @@
 package dev.mednikov.loxscala
-package interpreter
+package scanner
 
 case class Token(tokenType: TokenType, lexeme: String, literal: Option[Any], lineNumber: Int):
   override def toString: String = {

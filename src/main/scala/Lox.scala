@@ -1,6 +1,6 @@
 package dev.mednikov.loxscala
 
-import dev.mednikov.loxscala.interpreter.Scanner
+import dev.mednikov.loxscala.scanner.Scanner
 
 import java.io.{BufferedReader, InputStreamReader}
 import java.nio.charset.Charset

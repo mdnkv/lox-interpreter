@@ -1,7 +1,7 @@
 package dev.mednikov.loxscala
-package interpreter
+package scanner
 
-import interpreter.TokenType._
+import scanner.TokenType._
 
 val keywords: Map[String, TokenType] = Map(
   "and" -> AND,

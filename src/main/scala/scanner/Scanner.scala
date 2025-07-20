@@ -1,7 +1,7 @@
 package dev.mednikov.loxscala
-package interpreter
+package scanner
 
-import dev.mednikov.loxscala.interpreter.TokenType._
+import dev.mednikov.loxscala.scanner.TokenType._
 
 import scala.collection.mutable.ListBuffer
 

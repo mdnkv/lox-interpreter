@@ -1,5 +1,5 @@
 package dev.mednikov.loxscala
-package interpreter
+package scanner
 
 enum TokenType:
   case LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE
