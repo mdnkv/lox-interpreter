@@ -1,6 +1,8 @@
 package dev.mednikov.loxscala
 
-import dev.mednikov.loxscala.scanner.Scanner
+import dev.mednikov.loxscala.parser.Parser
+import dev.mednikov.loxscala.scanner.TokenType.EOF
+import dev.mednikov.loxscala.scanner.{Scanner, Token}
 
 import java.io.{BufferedReader, InputStreamReader}
 import java.nio.charset.Charset
@@ -13,7 +15,10 @@ object Lox {
   private def run (payload: String): Unit = {
     val scanner = Scanner(payload)
     val tokens = scanner.scanTokens()
-    tokens.foreach(println)
+    val parser = Parser(tokens)
+    val expression = parser.parse()
+    if (hadError) then return
+//    tokens.foreach(println)
   }
 
   private def runFile(path: String): Unit = {
@@ -37,6 +42,15 @@ object Lox {
   def error (lineNumber: Int, message: String): Unit = {
     println(s"[line: $lineNumber] Error: $message")
     hadError = true
+  }
+
+  def error(token: Token, message: String): Unit = {
+    if (token.tokenType == EOF) {
+      error(token.lineNumber, s" at end, $message")
+    } else {
+      val lexeme = token.lexeme
+      error(token.lineNumber, s" at '$lexeme' $message")
+    }
   }
 
   def main(args: Array[String]): Unit = {
