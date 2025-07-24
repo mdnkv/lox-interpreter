@@ -1,5 +1,7 @@
 package dev.mednikov.loxscala
 
+import dev.mednikov.loxscala.errors.RuntimeError
+import dev.mednikov.loxscala.interpreter.Interpreter
 import dev.mednikov.loxscala.parser.Parser
 import dev.mednikov.loxscala.scanner.TokenType.EOF
 import dev.mednikov.loxscala.scanner.{Scanner, Token}
@@ -10,7 +12,9 @@ import java.nio.file.{Files, Paths}
 
 object Lox {
 
+  private val interpreter = Interpreter
   private var hadError: Boolean = false
+  private var hadRuntimeError: Boolean = false
 
   private def run (payload: String): Unit = {
     val scanner = Scanner(payload)
@@ -18,13 +22,14 @@ object Lox {
     val parser = Parser(tokens)
     val expression = parser.parse()
     if (hadError) then return
-//    tokens.foreach(println)
+    interpreter.interpret(expression)
   }
 
   private def runFile(path: String): Unit = {
     val bytes: Array[Byte] = Files.readAllBytes(Paths.get(path))
     run(String(bytes, Charset.defaultCharset()))
     if (hadError) System.exit(65)
+    if (hadRuntimeError) System.exit(70)
   }
 
   private def runPrompt(): Unit = {
@@ -51,6 +56,13 @@ object Lox {
       val lexeme = token.lexeme
       error(token.lineNumber, s" at '$lexeme' $message")
     }
+  }
+
+  def runtimeError(e: RuntimeError): Unit = {
+    val message = e.message
+    val lineNumber = e.token.lineNumber
+    println(s"$message \n[Line $lineNumber]")
+    hadRuntimeError = true
   }
 
   def main(args: Array[String]): Unit = {

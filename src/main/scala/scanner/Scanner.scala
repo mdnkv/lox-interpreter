@@ -19,7 +19,7 @@ class Scanner (source: String) {
     val ch = advance()
     ch match
       case '(' => addToken(LEFT_PAREN)
-      case ')' => addToken(LEFT_PAREN)
+      case ')' => addToken(RIGHT_PAREN)
       case '{' => addToken(LEFT_BRACE)
       case '}' => addToken(RIGHT_BRACE)
       case ',' => addToken(COMMA)

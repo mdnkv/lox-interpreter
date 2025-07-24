@@ -31,20 +31,21 @@ class Parser(tokens: List[Token]) {
   }
 
   private def matchNext(types: TokenType*): Boolean = {
+    for t <- types do
+      if check(t) then
+        advance()
+        return true
     false
   }
 
-  private def check(tt: TokenType): Boolean = {
-    if (isAtEnd) {
-      false
-    } else {
-      peek().tokenType == tt
-    }
-
+  private def check(tokenType: TokenType): Boolean = {
+    if isAtEnd then false else peek().tokenType == tokenType
   }
 
   private def advance(): Token = {
-    if (!isAtEnd) current += 1
+    if (!isAtEnd) {
+      current += 1
+    }
     previous()
   }
 
@@ -88,37 +89,29 @@ class Parser(tokens: List[Token]) {
     if (matchNext(BANG, MINUS)) {
       val operator: Token = previous()
       val right: Expression = unary()
-      Unary(operator, right)
+      return Unary(operator, right)
     }
     primary()
   }
 
   private def primary(): Expression = {
-    if (matchNext(FALSE)) {
-      Literal(false)
-    }
-    if (matchNext(TRUE)){
-      Literal(true)
-    }
-    if (matchNext(NIL)){
-      Literal(null)
-    }
-    if (matchNext(NUMBER, STRING)) {
-      Literal(previous().literal)
-    }
-    if (matchNext(LEFT_PAREN)) {
-      val expr: Expression = expression()
-      consume(RIGHT_PAREN, "Expect ')' after expression.")
+    if matchNext(TokenType.FALSE) then Literal(false)
+    else if matchNext(TokenType.TRUE) then Literal(true)
+    else if matchNext(TokenType.NIL) then Literal(null)
+    else if matchNext(TokenType.NUMBER, TokenType.STRING) then Literal(previous().literal)
+    else if matchNext(TokenType.LEFT_PAREN) then
+      val expr = expression()
+      consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
       Grouping(expr)
-    }
-    throw error(peek(), "Expect expression.")
+    else
+      throw error(peek(), "Expect expression.")
   }
 
-  private def consume(tt: TokenType, message: String): Unit = {
-    if (check(tt)){
+  private def consume(tokenType: TokenType, message: String): Token = {
+    if check(tokenType) then
       advance()
-    }
-    throw error(peek(), message)
+    else
+      throw error(peek(), message)
   }
 
   private def error(token: Token, message: String): ParsingError = {
