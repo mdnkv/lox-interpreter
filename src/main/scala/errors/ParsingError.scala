@@ -1,5 +1,5 @@
 package dev.mednikov.loxscala
-package parser
+package errors
 
 class ParsingError extends RuntimeException{
 

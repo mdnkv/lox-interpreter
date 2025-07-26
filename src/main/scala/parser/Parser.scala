@@ -3,22 +3,95 @@ package parser
 
 import scanner.{Token, TokenType}
 
+import dev.mednikov.loxscala.errors.ParsingError
 import dev.mednikov.loxscala.scanner.TokenType.*
+
+import scala.collection.mutable.ListBuffer
 
 
 class Parser(tokens: List[Token]) {
 
   private var current: Int = 0
 
-  def parse(): Expression = {
+  def parse(): List[Statement] = {
     try {
-      expression()
+      val statements = ListBuffer.empty[Statement]
+      while(!isAtEnd){
+        statements += declaration()
+      }
+      statements.toList
     } catch {
       case e: ParsingError => null
     }
   }
 
-  private def expression(): Expression = equality()
+  private def declaration(): Statement = {
+    try {
+      if (matchNext(VAR)) then return varDeclaration()
+      statement()
+    } catch {
+      case e: ParsingError => {
+        synchronize()
+        null
+      }
+    }
+  }
+
+  private def varDeclaration(): Statement = {
+    val name: Token = consume(IDENTIFIER, "Expect variable name.")
+    val initializer: Expression = if (matchNext(EQUAL)) then expression() else null
+    consume(SEMICOLON, "Expect ; after variable declaration")
+    VarStatement(name, initializer)
+  }
+
+  private def statement(): Statement = {
+    if (matchNext(PRINT)) {
+      printStatement()
+    } else if (matchNext(LEFT_BRACE)) {
+      blockStatement()
+    }
+    else {
+      expressionStatement()
+    }
+  }
+
+  private def blockStatement(): Statement = {
+    val statements = ListBuffer.empty[Statement]
+    while (!check(RIGHT_BRACE) && !isAtEnd){
+      statements += declaration()
+    }
+    consume(RIGHT_BRACE, "Expect } after block")
+    BlockStatement(statements.toList)
+  }
+
+  private def printStatement(): Statement = {
+    val expr: Expression = expression()
+    consume(SEMICOLON, "Expect ; after value.")
+    PrintStatement(expr)
+  }
+
+  private def expressionStatement(): Statement = {
+    val expr: Expression = expression()
+    consume(SEMICOLON, "Expect ; after value.")
+    ExpressionStatement(expr)
+  }
+
+  private def expression(): Expression = assignment()
+
+  private def assignment(): Expression = {
+    val expression = equality()
+    if (matchNext(EQUAL)){
+      val equals: Token = previous()
+      val value = assignment()
+
+      if (expression.isInstanceOf[Variable]) {
+        val name: Token = expression.asInstanceOf[Variable].name
+        return Assign(name, value)
+      }
+      error(equals, "Invalid assignment target")
+    }
+    expression
+  }
 
   private def equality(): Expression = {
     var expr: Expression = comparison()
@@ -95,13 +168,14 @@ class Parser(tokens: List[Token]) {
   }
 
   private def primary(): Expression = {
-    if matchNext(TokenType.FALSE) then Literal(false)
-    else if matchNext(TokenType.TRUE) then Literal(true)
-    else if matchNext(TokenType.NIL) then Literal(null)
-    else if matchNext(TokenType.NUMBER, TokenType.STRING) then Literal(previous().literal)
-    else if matchNext(TokenType.LEFT_PAREN) then
+    if matchNext(FALSE) then Literal(false)
+    else if matchNext(TRUE) then Literal(true)
+    else if matchNext(NIL) then Literal(null)
+    else if matchNext(IDENTIFIER) then Variable(previous())
+    else if matchNext(NUMBER, STRING) then Literal(previous().literal)
+    else if matchNext(LEFT_PAREN) then
       val expr = expression()
-      consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
+      consume(RIGHT_PAREN, "Expect ')' after expression.")
       Grouping(expr)
     else
       throw error(peek(), "Expect expression.")

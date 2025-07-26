@@ -9,7 +9,9 @@ import dev.mednikov.loxscala.scanner.TokenType.*
 
 object Interpreter {
 
-  def evaluation(expr: Expression): Any = {
+  private var environment: Environment = Environment(null)
+
+  private def evaluation(expr: Expression): Any = {
     expr match {
       case Literal(Some(v)) => v
       case Literal(None) => null
@@ -69,16 +71,51 @@ object Interpreter {
           case _ => null
         }
       }
+      case Variable(name) => environment.get(name)
+      case Assign(name, valueExpr) => {
+        val value = evaluation(valueExpr)
+        environment.assign(name, value)
+        value
+      }
       case _ => null
     }
   }
 
-  def interpret (expr: Expression): Unit = {
+  def interpret (statements: List[Statement]): Unit = {
     try {
-      val value = evaluation(expr)
-      println(stringify(value))
+      for (stmt <- statements){
+        execute(stmt)
+      }
     } catch {
       case e: RuntimeError => Lox.runtimeError(e)
+    }
+  }
+
+  private def execute(statement: Statement): Unit = {
+    statement match {
+      case s: ExpressionStatement => evaluation(s.expression)
+      case s: PrintStatement => println(stringify(evaluation(s.expression)))
+      case s: VarStatement => {
+        val value = evaluation(s.initializer)
+        environment.define(s.name.lexeme, value)
+      }
+      case s: BlockStatement => {
+        executeBlock(s.statements, Environment(environment))
+      }
+    }
+  }
+
+  private def executeBlock(statements: List[Statement], env: Environment): Unit = {
+    val previous: Environment = this.environment
+    try {
+      this.environment = env
+      for (stmt <- statements){
+        execute(stmt)
+      }
+    } catch {
+      case e: RuntimeError => Lox.runtimeError(e)
+    } finally {
+      this.environment = previous
     }
   }
 

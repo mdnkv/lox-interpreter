@@ -2,7 +2,7 @@ package dev.mednikov.loxscala
 
 import dev.mednikov.loxscala.errors.RuntimeError
 import dev.mednikov.loxscala.interpreter.Interpreter
-import dev.mednikov.loxscala.parser.Parser
+import dev.mednikov.loxscala.parser.{Parser, Statement}
 import dev.mednikov.loxscala.scanner.TokenType.EOF
 import dev.mednikov.loxscala.scanner.{Scanner, Token}
 
@@ -11,7 +11,7 @@ import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
 
 object Lox {
-
+  
   private val interpreter = Interpreter
   private var hadError: Boolean = false
   private var hadRuntimeError: Boolean = false
@@ -20,9 +20,9 @@ object Lox {
     val scanner = Scanner(payload)
     val tokens = scanner.scanTokens()
     val parser = Parser(tokens)
-    val expression = parser.parse()
+    val statements: List[Statement] = parser.parse()
     if (hadError) then return
-    interpreter.interpret(expression)
+    interpreter.interpret(statements)
   }
 
   private def runFile(path: String): Unit = {
